@@ -58,22 +58,27 @@ elif choice == "Study":
             st.experimental_rerun()
     else:
         elapsed = time.time() - profile['timer_start']
-        remaining = int(profile['timer_duration'] - elapsed)
-        if remaining > 0:
-            mins, secs = divmod(remaining, 60)
-            st.subheader(f"Time Remaining: {mins:02d}:{secs:02d}")
-            time.sleep(1)
-            st.experimental_rerun()
-        else:
-            st.subheader("🔔 Time's up! Click below to complete session.")
-            if st.button("Complete Session"):
-                simulate_study(profile, int(profile['timer_duration'] / 60), subject)
-                profile['timer_running'] = False
-                profile['timer_start'] = None
-                profile['timer_duration'] = None
-                save_profile(profile)
-                st.success("Session recorded! Check Stats page for details.")
-                st.experimental_rerun()
+remaining = int(profile['timer_duration'] - elapsed)
+
+if remaining > 0:
+    mins, secs = divmod(remaining, 60)
+    st.subheader(f"Time Remaining: {mins:02d}:{secs:02d}")
+    
+    # Trigger rerun after rendering with a short delay
+    st.session_state["_rerun_trigger"] = True
+    time.sleep(1)
+    st.experimental_rerun()
+else:
+    st.subheader("🔔 Time's up! Click below to complete session.")
+    if st.button("Complete Session"):
+        simulate_study(profile, int(profile['timer_duration'] / 60), subject)
+        profile['timer_running'] = False
+        profile['timer_start'] = None
+        profile['timer_duration'] = None
+        save_profile(profile)
+        st.success("Session recorded! Check Stats page for details.")
+        st.session_state["_rerun_trigger"] = False  # reset rerun flag
+        st.experimental_rerun()
 
 # --------- Stats Page ---------
 elif choice == "Stats":
