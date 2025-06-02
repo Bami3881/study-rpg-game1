@@ -183,3 +183,8 @@ else:
                     st.success("Session ended early. XP and gold adjusted accordingly.")
                     st.experimental_rerun()
 
+if "profile" not in st.session_state:
+    st.session_state["profile"] = load_profile()
+profile = st.session_state["profile"]
+
+
