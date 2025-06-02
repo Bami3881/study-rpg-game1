@@ -42,6 +42,7 @@ elif choice == "Study":
     st.header("📚 Study Session")
     default_subjects = ["Campbell Biology", "AMC Math", "AP Seminar", "Pre-calculus", "NMSQT", "Psychology"]
     subject = st.selectbox("Select Subject", default_subjects + ["Add new..."])
+    
     if subject == "Add new...":
         custom = st.text_input("Enter new subject name")
         if st.button("Add Subject") and custom:
@@ -49,6 +50,7 @@ elif choice == "Study":
             default_subjects.append(custom)
 
     minutes = st.number_input("Set Timer (minutes)", min_value=5, max_value=180, value=30)
+    
     if not profile.get("timer_running", False):
         if st.button("Start Timer"):
             profile['timer_start'] = time.time()
@@ -58,33 +60,34 @@ elif choice == "Study":
             st.experimental_rerun()
     else:
         elapsed = time.time() - profile['timer_start']
-remaining = int(profile['timer_duration'] - elapsed)
+        remaining = int(profile['timer_duration'] - elapsed)
 
-if remaining > 0:
-    mins, secs = divmod(remaining, 60)
-    st.subheader(f"Time Remaining: {mins:02d}:{secs:02d}")
-    
-    # Trigger rerun after rendering with a short delay
-    st.session_state["_rerun_trigger"] = True
-    time.sleep(1)
-    st.experimental_rerun()
-else:
-    st.subheader("🔔 Time's up! Click below to complete session.")
-    if st.button("Complete Session"):
-        simulate_study(profile, int(profile['timer_duration'] / 60), subject)
-        profile['timer_running'] = False
-        profile['timer_start'] = None
-        profile['timer_duration'] = None
-        save_profile(profile)
-        st.success("Session recorded! Check Stats page for details.")
-        st.session_state["_rerun_trigger"] = False  # reset rerun flag
-        st.experimental_rerun()
+        if remaining > 0:
+            mins, secs = divmod(remaining, 60)
+            st.subheader(f"Time Remaining: {mins:02d}:{secs:02d}")
+            
+            # Trigger rerun after rendering with a short delay
+            st.session_state["_rerun_trigger"] = True
+            time.sleep(1)
+            st.experimental_rerun()
+        else:
+            st.subheader("🔔 Time's up! Click below to complete session.")
+            if st.button("Complete Session"):
+                simulate_study(profile, int(profile['timer_duration'] / 60), subject)
+                profile['timer_running'] = False
+                profile['timer_start'] = None
+                profile['timer_duration'] = None
+                save_profile(profile)
+                st.success("Session recorded! Check Stats page for details.")
+                st.session_state["_rerun_trigger"] = False  # reset rerun flag
+                st.experimental_rerun()
 
 # --------- Stats Page ---------
 elif choice == "Stats":
     st.header("📊 Study Statistics")
     st.write(f"Total Study Time: {profile['total_study_minutes']} minutes")
     st.write("By Subject:")
+    
     for subj, mins in profile['subject_totals'].items():
         st.write(f"- {subj}: {mins} minutes")
 
@@ -92,6 +95,7 @@ elif choice == "Stats":
     df = pd.DataFrame({'Date': dates, 'Minutes': values})
     df = df.set_index('Date')
     st.line_chart(df)
+
 
 # --------- Shop Page ---------
 elif choice == "Shop":
