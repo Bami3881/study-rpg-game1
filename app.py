@@ -57,7 +57,7 @@ elif choice == "Study":
             profile['timer_duration'] = minutes * 60
             profile['timer_running'] = True
             save_profile(profile)
-            st.experimental_rerun()
+            st.rerun()
     else:
         elapsed = time.time() - profile['timer_start']
         remaining = int(profile['timer_duration'] - elapsed)
@@ -69,7 +69,7 @@ elif choice == "Study":
             # Trigger rerun after rendering with a short delay
             st.session_state["_rerun_trigger"] = True
             time.sleep(1)
-            st.experimental_rerun()
+            st.rerun()
         else:
             st.subheader("🔔 Time's up! Click below to complete session.")
             if st.button("Complete Session"):
@@ -80,7 +80,7 @@ elif choice == "Study":
                 save_profile(profile)
                 st.success("Session recorded! Check Stats page for details.")
                 st.session_state["_rerun_trigger"] = False  # reset rerun flag
-                st.experimental_rerun()
+                st.rerun()
 
 # --------- Stats Page ---------
 elif choice == "Stats":
