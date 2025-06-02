@@ -57,6 +57,8 @@ elif choice == "Study":
             profile['timer_duration'] = minutes * 60
             profile['timer_running'] = True
             save_profile(profile)
+if profile:
+    st.write("Profile loaded successfully!")
 
     else:
         elapsed = time.time() - profile['timer_start']
