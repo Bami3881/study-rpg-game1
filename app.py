@@ -59,7 +59,9 @@ elif choice == "Study":
             save_profile(profile)
 if profile:
     st.write("Profile loaded successfully!")
-
+if condition1:
+    # Code for condition1
+elif condition2:
     else:
         elapsed = time.time() - profile['timer_start']
         remaining = int(profile['timer_duration'] - elapsed)
