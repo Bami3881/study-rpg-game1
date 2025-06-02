@@ -60,9 +60,12 @@ elif choice == "Study":
 if profile:
     st.write("Profile loaded successfully!")
 if condition1:
-    # Code for condition1
+     st.write("Condition met!")
 elif condition2:
+     st.write("Second condition met!")
     else:
+        st.write("Default case executed.")
+        
         elapsed = time.time() - profile['timer_start']
         remaining = int(profile['timer_duration'] - elapsed)
 
