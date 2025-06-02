@@ -57,7 +57,7 @@ elif choice == "Study":
             profile['timer_duration'] = minutes * 60
             profile['timer_running'] = True
             save_profile(profile)
-            st.rerun()
+            if profile
     else:
         elapsed = time.time() - profile['timer_start']
         remaining = int(profile['timer_duration'] - elapsed)
@@ -68,8 +68,7 @@ elif choice == "Study":
 
             # Trigger rerun after rendering with a short delay
             st.session_state["_rerun_trigger"] = True
-            time.sleep(1)
-            st.rerun()
+            
         else:
             st.subheader("🔔 Time's up! Click below to complete session.")
             if st.button("Complete Session", key="complete_session_button"):
@@ -80,7 +79,7 @@ elif choice == "Study":
                 save_profile(profile)
                 st.success("Session recorded! Check Stats page for details.")
                 st.session_state["_rerun_trigger"] = False  # reset rerun flag
-                st.rerun()
+                if profile
 
 # --------- Stats Page ---------
 elif choice == "Stats":
@@ -137,6 +136,10 @@ elif choice == "Adventure":
 # --------- Timer Controls ---------
 if choice == "Study":
     if profile.get("timer_running", False):
+        st.write(f"Timer Running: {profile.get('timer_running')}")
+        st.write(f"Paused Time: {profile.get('paused_time', 'Not set')}")
+        st.write(f"Remaining Time: {remaining}")  # 🔹 Add here for debugging
+        
         elapsed = time.time() - profile["timer_start"]
         remaining = max(int(profile["timer_duration"] - elapsed), 0)
 
@@ -147,7 +150,7 @@ if choice == "Study":
             if st.button("Pause", key="pause_button"):
                 profile["timer_running"] = False
                 profile["paused_time"] = elapsed
-                st.rerun()
+                if profile
         with col2:
             if st.button("Stop Early", key="stop_button"):
                 if elapsed >= 600:  # More than 10 minutes
@@ -190,9 +193,3 @@ if choice == "Study":
                 profile["timer_duration"] = None
                 del profile["paused_time"]
                 st.rerun()
-
-st.write(f"Timer Running: {profile.get('timer_running')}")
-st.write(f"Paused Time: {profile.get('paused_time', 'Not set')}")
-st.write(f"Remaining Time: {remaining}")
-
-
