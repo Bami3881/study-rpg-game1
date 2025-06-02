@@ -132,3 +132,54 @@ elif choice == "Adventure":
         else:
             st.error(message)
         save_profile(profile)
+
+# --------- Timer Controls ---------
+if profile.get("timer_running", False):
+    elapsed = time.time() - profile['timer_start']
+    remaining = int(profile['timer_duration'] - elapsed)
+    
+    if remaining > 0:
+        mins, secs = divmod(remaining, 60)
+        st.subheader(f"Time Remaining: {mins:02d}:{secs:02d}")
+
+        if st.button("Pause"):
+            profile["timer_running"] = False
+            profile["paused_time"] = elapsed
+            save_profile(profile)
+            st.experimental_rerun()
+
+    # Auto-refresh for timer countdown
+    time.sleep(1)
+    st.experimental_rerun()
+else:
+    if "paused_time" in profile:
+        elapsed = profile["paused_time"]
+        remaining = int(profile['timer_duration'] - elapsed)
+        
+        if remaining > 0:
+            st.subheader(f"Paused at: {remaining//60:02d}:{remaining%60:02d}")
+            col1, col2 = st.columns(2)
+
+            with col1:
+                if st.button("Resume"):
+                    profile["timer_running"] = True
+                    profile["timer_start"] = time.time() - profile["paused_time"]
+                    del profile["paused_time"]
+                    save_profile(profile)
+                    st.experimental_rerun()
+
+            with col2:
+                if st.button("End Session"):
+                    partial_xp = int((elapsed / profile['timer_duration']) * 0.8 * 10)  # 80% XP reward
+                    partial_gold = int((elapsed / profile['timer_duration']) * 0.8 * 5)  # 80% Gold reward
+                    simulate_study(profile, elapsed // 60, subject, xp_override=partial_xp, gold_override=partial_gold)
+
+                    profile["timer_running"] = False
+                    profile["timer_start"] = None
+                    profile["timer_duration"] = None
+                    del profile["paused_time"]
+                    save_profile(profile)
+
+                    st.success("Session ended early. XP and gold adjusted accordingly.")
+                    st.experimental_rerun()
+
