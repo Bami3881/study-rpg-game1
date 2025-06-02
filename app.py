@@ -9,10 +9,11 @@ st.set_page_config(page_title="Chronicles of Cerebria", page_icon="🧪", layout
 # -------------- Helper Functions --------------
 def initialize():
     if "initialized" not in st.session_state:
-        st.session_state["profile"] = load_profile()
-        if st.session_state["profile"] is None:
-            st.session_state["profile"] = create_new_profile()
-            save_profile(st.session_state["profile"])
+        profile = load_profile()
+        if profile is None:
+            profile = create_new_profile()
+            save_profile(profile)
+        st.session_state["profile"] = profile
         st.session_state["initialized"] = True
         st.experimental_rerun()
 
@@ -131,3 +132,11 @@ elif choice == "Adventure":
         else:
             st.error(message)
         save_profile(profile)
+        
+def main():
+    if not st.session_state.get("initialized"):
+        st.write("Initializing...")
+        return
+
+    # Your app UI code goes here:
+    show_dashboard()
