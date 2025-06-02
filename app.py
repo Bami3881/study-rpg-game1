@@ -152,7 +152,7 @@ profile = st.session_state["profile"]
 
 # Timer Controls UI
 st.header("📚 Study Timer")
-minutes = st.number_input("Set Timer (minutes)", min_value=5, max_value=180, value=30)
+minutes = st.number_input("Set Timer (minutes)", min_value=5, max_value=180, value=30, key="timer_input")
 
 if not profile["timer_running"] and profile["timer_start"] is None:
     if st.button("Start Timer"):
