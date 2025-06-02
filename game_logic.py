@@ -51,8 +51,26 @@ def save_profile(profile, path="data.json"):
         json.dump(out, f)
 
 def load_profile(path="data.json"):
-    if os.path.exists(path):
-        data = json.load(open(path, "r", encoding='latin1'))
+    """
+    Attempts to load a saved profile from data.json.
+    If the file doesn’t exist or is malformed (missing keys), returns None.
+    """
+    if not os.path.exists(path):
+        return None
+
+    try:
+        raw = open(path, "r", encoding="latin1").read()
+        data = json.loads(raw)
+        # Ensure required keys exist
+        required_keys = [
+            'name', 'class', 'picture', 'level', 'xp', 'gold',
+            'items', 'stats', 'inventory', 'total_study_minutes',
+            'subject_totals', 'level_xp_threshold', 'sessions'
+        ]
+        for key in required_keys:
+            if key not in data:
+                return None  # Missing something—start fresh
+
         profile = {
             'name': data['name'],
             'class': data['class'],
@@ -72,7 +90,10 @@ def load_profile(path="data.json"):
             'timer_duration': None
         }
         return profile
-    return None
+
+    except Exception:
+        # If any parsing error or KeyError occurs, ignore the corrupted file
+        return None
 
 # --------- Leveling & Stats ---------
 def add_xp(profile, amount):
