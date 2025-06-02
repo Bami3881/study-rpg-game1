@@ -67,10 +67,12 @@ else:  # ✅ Properly aligned
     print("Default case executed")
 
         
+condition = profile.get("timer_running", False)  # ✅ Define condition
 if condition:
     print("Condition met")
     elapsed = time.time() - profile['timer_start']
     remaining = int(profile['timer_duration'] - elapsed)
+
 
         if remaining > 0:
             mins, secs = divmod(remaining, 60)
