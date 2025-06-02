@@ -15,7 +15,6 @@ def initialize():
             save_profile(profile)
         st.session_state["profile"] = profile
         st.session_state["initialized"] = True
-        st.experimental_rerun()
 
 # -------------- Main App --------------
 if 'profile' not in st.session_state:
