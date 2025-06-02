@@ -8,15 +8,12 @@ st.set_page_config(page_title="Chronicles of Cerebria", page_icon="🧪", layout
 
 # -------------- Helper Functions --------------
 def initialize():
-    st.title("🧪 Chronicles of Cerebria")
-    st.write("Welcome to your Study RPG! Enter your details to begin.")
-    name = st.text_input("Enter Your Name")
-    player_class = st.selectbox("Choose Your Class", ["Arcanist of Algebra", "Scribe of Scrolls", "Biotech Alchemist"])
-    picture = st.file_uploader("Upload Your Avatar Image (PNG/JPG)", type=["png", "jpg", "jpeg"])
-    if st.button("Start Adventure") and name and picture:
-        pic_bytes = picture.getvalue()
-        st.session_state.profile = create_profile(name, player_class, pic_bytes)
-        save_profile(st.session_state.profile)
+    if "initialized" not in st.session_state:
+        st.session_state["profile"] = load_profile()
+        if st.session_state["profile"] is None:
+            st.session_state["profile"] = create_new_profile()
+            save_profile(st.session_state["profile"])
+        st.session_state["initialized"] = True
         st.experimental_rerun()
 
 # -------------- Main App --------------
