@@ -1,33 +1,27 @@
 import streamlit as st
 import time
+import pandas as pd
 from datetime import datetime
 from game_logic import *
 
 # Set page configuration
 st.set_page_config(page_title="Chronicles of Cerebria", page_icon="🧪", layout="wide")
 
-# -------------- Helper Functions --------------
+# -------------- Initialization --------------
 def initialize():
-    if "initialized" not in st.session_state:
-        profile = load_profile()
-        if profile is None:
-            profile = create_new_profile()
-            save_profile(profile)
-        st.session_state["profile"] = profile
-        st.session_state["initialized"] = True
+    profile = load_profile()
+    if profile is None:
+        profile = create_new_profile()
+        save_profile(profile)
+    st.session_state["profile"] = profile
+    st.session_state["initialized"] = True
 
-# -------------- Main App --------------
-if 'profile' not in st.session_state:
-    loaded = load_profile()
-    if loaded:
-        st.session_state.profile = loaded
-    else:
-        initialize()
-        st.stop()
+if "initialized" not in st.session_state:
+    initialize()
 
-profile = st.session_state.profile
+profile = st.session_state["profile"]
 
-# Sidebar for navigation
+# -------------- Sidebar Navigation --------------
 pages = ["Home", "Study", "Stats", "Shop", "Adventure"]
 choice = st.sidebar.radio("Navigation", pages)
 
@@ -46,7 +40,6 @@ if choice == "Home":
 # --------- Study Page ---------
 elif choice == "Study":
     st.header("📚 Study Session")
-    # Subject dropdown with option to add new
     default_subjects = ["Campbell Biology", "AMC Math", "AP Seminar", "Pre-calculus", "NMSQT", "Psychology"]
     subject = st.selectbox("Select Subject", default_subjects + ["Add new..."])
     if subject == "Add new...":
@@ -56,7 +49,7 @@ elif choice == "Study":
             default_subjects.append(custom)
 
     minutes = st.number_input("Set Timer (minutes)", min_value=5, max_value=180, value=30)
-    if not profile['timer_running']:
+    if not profile.get("timer_running", False):
         if st.button("Start Timer"):
             profile['timer_start'] = time.time()
             profile['timer_duration'] = minutes * 60
@@ -74,7 +67,7 @@ elif choice == "Study":
         else:
             st.subheader("🔔 Time's up! Click below to complete session.")
             if st.button("Complete Session"):
-                simulate_study(profile, int(profile['timer_duration']/60), subject)
+                simulate_study(profile, int(profile['timer_duration'] / 60), subject)
                 profile['timer_running'] = False
                 profile['timer_start'] = None
                 profile['timer_duration'] = None
@@ -90,9 +83,7 @@ elif choice == "Stats":
     for subj, mins in profile['subject_totals'].items():
         st.write(f"- {subj}: {mins} minutes")
 
-    # Weekly line chart
     dates, values = get_weekly_data(profile)
-    import pandas as pd
     df = pd.DataFrame({'Date': dates, 'Minutes': values})
     df = df.set_index('Date')
     st.line_chart(df)
@@ -109,6 +100,7 @@ elif choice == "Shop":
         else:
             st.error(msg)
         save_profile(profile)
+
     st.write("Your Items:")
     for item_name, qty in profile['items'].items():
         st.write(f"- {item_name} (x{qty})")
@@ -131,11 +123,3 @@ elif choice == "Adventure":
         else:
             st.error(message)
         save_profile(profile)
-        
-def main():
-    if not st.session_state.get("initialized"):
-        st.write("Initializing...")
-        return
-
-    # Your app UI code goes here:
-    show_dashboard()
