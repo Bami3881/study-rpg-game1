@@ -191,3 +191,8 @@ if choice == "Study":
                 del profile["paused_time"]
                 st.rerun()
 
+st.write(f"Timer Running: {profile.get('timer_running')}")
+st.write(f"Paused Time: {profile.get('paused_time', 'Not set')}")
+st.write(f"Remaining Time: {remaining}")
+
+
