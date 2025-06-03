@@ -40,7 +40,7 @@ if choice == "Home":
 
 # --------- Study Page ---------
 elif choice == "Study":
-    st.header("Study Session")  # Removed emoji that caused the error
+    st.header("Study Session")
     default_subjects = ["Campbell Biology", "AMC Math", "AP Seminar", "Pre-calculus", "NMSQT", "Psychology"]
     subject = st.selectbox("Select Subject", default_subjects + ["Add new..."])
 
@@ -50,35 +50,101 @@ elif choice == "Study":
             subject = custom
             default_subjects.append(custom)
 
-    minutes = st.number_input("Set Timer (minutes)", min_value=5, max_value=180, value=30)
+    minutes = st.number_input("Set Timer (minutes)", min_value=5, max_value=180, value=30, key="study_timer_input")
 
-    if not profile.get("timer_running", False):
+    if not profile.get("timer_running", False) and not profile.get("paused_time"):
         if st.button("Start Timer"):
             profile['timer_start'] = time.time()
             profile['timer_duration'] = minutes * 60
             profile['timer_running'] = True
+            profile['current_subject'] = subject
             save_profile(profile)
             st.rerun()
-    else:
+
+    elif profile.get("timer_running", False):
         elapsed = time.time() - profile['timer_start']
         remaining = int(profile['timer_duration'] - elapsed)
 
         if remaining > 0:
             mins, secs = divmod(remaining, 60)
             st.subheader(f"Time Remaining: {mins:02d}:{secs:02d}")
-            st.session_state["_rerun_trigger"] = True
+            col1, col2 = st.columns(2)
+            with col1:
+                if st.button("Pause"):
+                    profile["paused_time"] = elapsed
+                    profile["timer_running"] = False
+                    save_profile(profile)
+                    st.rerun()
+            with col2:
+                if st.button("Stop Early"):
+                    if elapsed >= 600:
+                        proportion = elapsed / profile['timer_duration']
+                        xp_earned = int(proportion * 10 * (profile['timer_duration'] / 60))
+                        gold_earned = int(proportion * 5 * (profile['timer_duration'] / 60))
+                        profile["xp"] += xp_earned
+                        profile["gold"] += gold_earned
+                        profile["total_study_minutes"] += int(elapsed / 60)
+                        profile["subject_totals"][profile['current_subject']] = profile["subject_totals"].get(profile['current_subject'], 0) + int(elapsed / 60)
+                        st.success(f"Session stopped early. You earned {xp_earned} XP and {gold_earned} gold.")
+                    else:
+                        st.warning("Studied less than 10 minutes. No rewards earned.")
+
+                    profile["timer_running"] = False
+                    profile["timer_start"] = None
+                    profile["timer_duration"] = None
+                    profile["paused_time"] = None
+                    profile["current_subject"] = None
+                    save_profile(profile)
+                    st.rerun()
+
             time.sleep(1)
             st.rerun()
         else:
             st.subheader("Time's up! Click below to complete session.")
             if st.button("Complete Session"):
-                simulate_study(profile, int(profile['timer_duration'] / 60), subject)
-                profile['timer_running'] = False
-                profile['timer_start'] = None
-                profile['timer_duration'] = None
+                simulate_study(profile, int(profile['timer_duration'] / 60), profile["current_subject"])
+                profile["timer_running"] = False
+                profile["timer_start"] = None
+                profile["timer_duration"] = None
+                profile["current_subject"] = None
+                profile["paused_time"] = None
                 save_profile(profile)
                 st.success("Session recorded! Check Stats page for details.")
-                st.session_state["_rerun_trigger"] = False
+                st.rerun()
+
+    elif profile.get("paused_time") is not None:
+        paused_remaining = max(int(profile["timer_duration"] - profile["paused_time"]), 0)
+        mins, secs = divmod(paused_remaining, 60)
+        st.subheader(f"Paused at: {mins:02d}:{secs:02d}")
+
+        col1, col2 = st.columns(2)
+        with col1:
+            if st.button("Resume"):
+                profile["timer_start"] = time.time() - profile["paused_time"]
+                profile["timer_running"] = True
+                profile["paused_time"] = None
+                save_profile(profile)
+                st.rerun()
+        with col2:
+            if st.button("Stop Early"):
+                if profile["paused_time"] >= 600:
+                    proportion = profile["paused_time"] / profile["timer_duration"]
+                    xp_earned = int(proportion * 10 * (profile['timer_duration'] / 60))
+                    gold_earned = int(proportion * 5 * (profile['timer_duration'] / 60))
+                    profile["xp"] += xp_earned
+                    profile["gold"] += gold_earned
+                    profile["total_study_minutes"] += int(profile["paused_time"] / 60)
+                    profile["subject_totals"][profile['current_subject']] = profile["subject_totals"].get(profile['current_subject'], 0) + int(profile["paused_time"] / 60)
+                    st.success(f"Session stopped early. You earned {xp_earned} XP and {gold_earned} gold.")
+                else:
+                    st.warning("Studied less than 10 minutes. No rewards earned.")
+
+                profile["timer_running"] = False
+                profile["timer_start"] = None
+                profile["timer_duration"] = None
+                profile["paused_time"] = None
+                profile["current_subject"] = None
+                save_profile(profile)
                 st.rerun()
 
 # --------- Stats Page ---------
