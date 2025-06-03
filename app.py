@@ -216,3 +216,4 @@ elif "paused_time" in profile and profile["paused_time"] is not None:
             del profile["paused_time"]
             st.rerun()
 
+
