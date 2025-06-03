@@ -24,6 +24,14 @@ profile = st.session_state["profile"]
 
 # -------------- Sidebar Navigation --------------
 pages = ["Home", "Study", "Stats", "Shop", "Adventure"]
+# Check if URL has ?nav=Focus+Timer etc.
+query_params = st.experimental_get_query_params()
+default_page = query_params.get("nav", [None])[0]
+if default_page in pages:
+    choice = default_page
+else:
+    choice = st.sidebar.radio("Navigation", pages)
+
 choice = st.sidebar.radio("Navigation", pages)
 
 # --------- Home Page ---------
@@ -146,6 +154,15 @@ elif choice == "Study":
                 profile["current_subject"] = None
                 save_profile(profile)
                 st.rerun()
+                
+import streamlit.components.v1 as components
+
+# Button to navigate to full screen timer
+st.markdown("---")
+st.markdown("### Want to focus better?")
+full_screen_link = f'<a href="?nav=Focus+Timer" target="_self"><button style="font-size:22px;padding:10px 25px;margin-top:10px;background-color:#3E64FF;color:white;border:none;border-radius:10px;">🖥️ Full Screen Mode</button></a>'
+st.markdown(full_screen_link, unsafe_allow_html=True)
+
 
 # --------- Stats Page ---------
 elif choice == "Stats":
