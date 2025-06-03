@@ -1,11 +1,12 @@
+# -*- coding: utf-8 -*-
 import streamlit as st
 import time
 import pandas as pd
 from datetime import datetime
 from game_logic import *
 
-# Set page configuration
-st.set_page_config(page_title="Chronicles of Cerebria", page_icon="🧪", layout="wide")
+# Set page configuration (no emoji in page icon)
+st.set_page_config(page_title="Chronicles of Cerebria", page_icon="🔬", layout="wide")
 
 # -------------- Initialization --------------
 def initialize():
@@ -39,7 +40,7 @@ if choice == "Home":
 
 # --------- Study Page ---------
 elif choice == "Study":
-    st.header("\ud83d\udcda Study Session")
+    st.header("Study Session")  # Removed emoji that caused the error
     default_subjects = ["Campbell Biology", "AMC Math", "AP Seminar", "Pre-calculus", "NMSQT", "Psychology"]
     subject = st.selectbox("Select Subject", default_subjects + ["Add new..."])
 
@@ -51,80 +52,38 @@ elif choice == "Study":
 
     minutes = st.number_input("Set Timer (minutes)", min_value=5, max_value=180, value=30)
 
-    if not profile.get("timer_running", False) and not profile.get("paused_time"):
+    if not profile.get("timer_running", False):
         if st.button("Start Timer"):
             profile['timer_start'] = time.time()
             profile['timer_duration'] = minutes * 60
             profile['timer_running'] = True
             save_profile(profile)
             st.rerun()
-
-    elif profile.get("timer_running"):
+    else:
         elapsed = time.time() - profile['timer_start']
-        remaining = max(int(profile['timer_duration'] - elapsed), 0)
+        remaining = int(profile['timer_duration'] - elapsed)
 
-        st.subheader(f"Time Remaining: {remaining//60:02d}:{remaining%60:02d}")
-        col1, col2 = st.columns(2)
-        with col1:
-            if st.button("Pause"):
-                profile["paused_time"] = elapsed
-                profile["timer_running"] = False
-                save_profile(profile)
-                st.rerun()
-        with col2:
-            if st.button("Stop Early"):
-                if elapsed >= 600:
-                    proportion = elapsed / profile["timer_duration"]
-                    xp_gain, gold_gain = reward_study(proportion, minutes)
-                    profile["xp"] += xp_gain
-                    profile["gold"] += gold_gain
-                    st.success(f"Session stopped early. You gained {xp_gain} XP and {gold_gain} gold.")
-                else:
-                    st.warning("Session stopped early, but no rewards were given.")
-                profile.update({"timer_running": False, "timer_start": None, "timer_duration": None, "paused_time": None})
-                save_profile(profile)
-                st.rerun()
-
-    elif profile.get("paused_time") is not None:
-        paused_remaining = max(int(profile['timer_duration'] - profile['paused_time']), 0)
-        st.subheader(f"Paused at: {paused_remaining//60:02d}:{paused_remaining%60:02d}")
-        col1, col2 = st.columns(2)
-        with col1:
-            if st.button("Resume"):
-                profile["timer_start"] = time.time() - profile["paused_time"]
-                profile["timer_running"] = True
-                profile.pop("paused_time", None)
-                save_profile(profile)
-                st.rerun()
-        with col2:
-            if st.button("Stop Early"):
-                if profile["paused_time"] >= 600:
-                    proportion = profile["paused_time"] / profile["timer_duration"]
-                    xp_gain, gold_gain = reward_study(proportion, minutes)
-                    profile["xp"] += xp_gain
-                    profile["gold"] += gold_gain
-                    st.success(f"Session stopped early. You gained {xp_gain} XP and {gold_gain} gold.")
-                else:
-                    st.warning("Session stopped early, but no rewards were given.")
-                profile.update({"timer_running": False, "timer_start": None, "timer_duration": None})
-                profile.pop("paused_time", None)
-                save_profile(profile)
-                st.rerun()
-
-    elif profile.get("timer_start") and not profile.get("timer_running"):
-        elapsed = time.time() - profile['timer_start']
-        if elapsed >= profile['timer_duration']:
-            st.subheader("\ud83d\udd14 Time's up! Click below to complete session.")
+        if remaining > 0:
+            mins, secs = divmod(remaining, 60)
+            st.subheader(f"Time Remaining: {mins:02d}:{secs:02d}")
+            st.session_state["_rerun_trigger"] = True
+            time.sleep(1)
+            st.rerun()
+        else:
+            st.subheader("Time's up! Click below to complete session.")
             if st.button("Complete Session"):
                 simulate_study(profile, int(profile['timer_duration'] / 60), subject)
-                profile.update({"timer_running": False, "timer_start": None, "timer_duration": None})
+                profile['timer_running'] = False
+                profile['timer_start'] = None
+                profile['timer_duration'] = None
                 save_profile(profile)
                 st.success("Session recorded! Check Stats page for details.")
+                st.session_state["_rerun_trigger"] = False
                 st.rerun()
 
 # --------- Stats Page ---------
 elif choice == "Stats":
-    st.header("\ud83d\udcca Study Statistics")
+    st.header("Study Statistics")  # Removed emoji
     st.write(f"Total Study Time: {profile['total_study_minutes']} minutes")
     st.write("By Subject:")
 
@@ -138,9 +97,10 @@ elif choice == "Stats":
 
 # --------- Shop Page ---------
 elif choice == "Shop":
-    st.header("\ud83d\udecd\ufe0f Merchant’s Shop")
+    st.header("Merchant’s Shop")  # Removed emoji
     st.write(f"You have {profile['gold']} gold.")
     st.write("Gacha Spin: 50 gold per spin (chance to win random items)")
+
     if st.button("Spin Gacha"):
         item, msg = gacha_spin(profile)
         if item:
@@ -162,7 +122,7 @@ elif choice == "Shop":
 
 # --------- Adventure Page ---------
 elif choice == "Adventure":
-    st.header("\u2694\ufe0f Boss Raid")
+    st.header("Boss Raid")  # Removed emoji
     st.write("Test your might against the Boss!")
     if st.button("Challenge Boss"):
         win, message = boss_raid(profile)
@@ -171,4 +131,5 @@ elif choice == "Adventure":
         else:
             st.error(message)
         save_profile(profile)
+)
 
