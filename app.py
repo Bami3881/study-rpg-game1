@@ -25,7 +25,7 @@ profile = st.session_state["profile"]
 # -------------- Sidebar Navigation --------------
 pages = ["Home", "Study", "Stats", "Shop", "Adventure"]
 # Check if URL has ?nav=Focus+Timer etc.
-query_params = st.experimental_get_query_params()
+query_params = st.query_params()
 default_page = query_params.get("nav", [None])[0]
 if default_page in pages:
     choice = default_page
