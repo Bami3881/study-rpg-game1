@@ -39,10 +39,10 @@ if choice == "Home":
 
 # --------- Study Page ---------
 elif choice == "Study":
-    st.header("📚 Study Session")
+    st.header("\ud83d\udcda Study Session")
     default_subjects = ["Campbell Biology", "AMC Math", "AP Seminar", "Pre-calculus", "NMSQT", "Psychology"]
     subject = st.selectbox("Select Subject", default_subjects + ["Add new..."])
-    
+
     if subject == "Add new...":
         custom = st.text_input("Enter new subject name")
         if st.button("Add Subject") and custom:
@@ -50,44 +50,84 @@ elif choice == "Study":
             default_subjects.append(custom)
 
     minutes = st.number_input("Set Timer (minutes)", min_value=5, max_value=180, value=30)
-    
-    if not profile.get("timer_running", False):
+
+    if not profile.get("timer_running", False) and not profile.get("paused_time"):
         if st.button("Start Timer"):
             profile['timer_start'] = time.time()
             profile['timer_duration'] = minutes * 60
             profile['timer_running'] = True
             save_profile(profile)
             st.rerun()
-    else:
-        elapsed = time.time() - profile['timer_start']
-        remaining = int(profile['timer_duration'] - elapsed)
 
-        if remaining > 0:
-            mins, secs = divmod(remaining, 60)
-            st.subheader(f"Time Remaining: {mins:02d}:{secs:02d}")
-            
-            # Trigger rerun after rendering with a short delay
-            st.session_state["_rerun_trigger"] = True
-            time.sleep(1)
-            st.rerun()
-        else:
-            st.subheader("🔔 Time's up! Click below to complete session.")
+    elif profile.get("timer_running"):
+        elapsed = time.time() - profile['timer_start']
+        remaining = max(int(profile['timer_duration'] - elapsed), 0)
+
+        st.subheader(f"Time Remaining: {remaining//60:02d}:{remaining%60:02d}")
+        col1, col2 = st.columns(2)
+        with col1:
+            if st.button("Pause"):
+                profile["paused_time"] = elapsed
+                profile["timer_running"] = False
+                save_profile(profile)
+                st.rerun()
+        with col2:
+            if st.button("Stop Early"):
+                if elapsed >= 600:
+                    proportion = elapsed / profile["timer_duration"]
+                    xp_gain, gold_gain = reward_study(proportion, minutes)
+                    profile["xp"] += xp_gain
+                    profile["gold"] += gold_gain
+                    st.success(f"Session stopped early. You gained {xp_gain} XP and {gold_gain} gold.")
+                else:
+                    st.warning("Session stopped early, but no rewards were given.")
+                profile.update({"timer_running": False, "timer_start": None, "timer_duration": None, "paused_time": None})
+                save_profile(profile)
+                st.rerun()
+
+    elif profile.get("paused_time") is not None:
+        paused_remaining = max(int(profile['timer_duration'] - profile['paused_time']), 0)
+        st.subheader(f"Paused at: {paused_remaining//60:02d}:{paused_remaining%60:02d}")
+        col1, col2 = st.columns(2)
+        with col1:
+            if st.button("Resume"):
+                profile["timer_start"] = time.time() - profile["paused_time"]
+                profile["timer_running"] = True
+                profile.pop("paused_time", None)
+                save_profile(profile)
+                st.rerun()
+        with col2:
+            if st.button("Stop Early"):
+                if profile["paused_time"] >= 600:
+                    proportion = profile["paused_time"] / profile["timer_duration"]
+                    xp_gain, gold_gain = reward_study(proportion, minutes)
+                    profile["xp"] += xp_gain
+                    profile["gold"] += gold_gain
+                    st.success(f"Session stopped early. You gained {xp_gain} XP and {gold_gain} gold.")
+                else:
+                    st.warning("Session stopped early, but no rewards were given.")
+                profile.update({"timer_running": False, "timer_start": None, "timer_duration": None})
+                profile.pop("paused_time", None)
+                save_profile(profile)
+                st.rerun()
+
+    elif profile.get("timer_start") and not profile.get("timer_running"):
+        elapsed = time.time() - profile['timer_start']
+        if elapsed >= profile['timer_duration']:
+            st.subheader("\ud83d\udd14 Time's up! Click below to complete session.")
             if st.button("Complete Session"):
                 simulate_study(profile, int(profile['timer_duration'] / 60), subject)
-                profile['timer_running'] = False
-                profile['timer_start'] = None
-                profile['timer_duration'] = None
+                profile.update({"timer_running": False, "timer_start": None, "timer_duration": None})
                 save_profile(profile)
                 st.success("Session recorded! Check Stats page for details.")
-                st.session_state["_rerun_trigger"] = False  # reset rerun flag
                 st.rerun()
 
 # --------- Stats Page ---------
 elif choice == "Stats":
-    st.header("📊 Study Statistics")
+    st.header("\ud83d\udcca Study Statistics")
     st.write(f"Total Study Time: {profile['total_study_minutes']} minutes")
     st.write("By Subject:")
-    
+
     for subj, mins in profile['subject_totals'].items():
         st.write(f"- {subj}: {mins} minutes")
 
@@ -96,10 +136,9 @@ elif choice == "Stats":
     df = df.set_index('Date')
     st.line_chart(df)
 
-
 # --------- Shop Page ---------
 elif choice == "Shop":
-    st.header("🛍️ Merchant’s Shop")
+    st.header("\ud83d\udecd\ufe0f Merchant’s Shop")
     st.write(f"You have {profile['gold']} gold.")
     st.write("Gacha Spin: 50 gold per spin (chance to win random items)")
     if st.button("Spin Gacha"):
@@ -123,7 +162,7 @@ elif choice == "Shop":
 
 # --------- Adventure Page ---------
 elif choice == "Adventure":
-    st.header("⚔️ Boss Raid")
+    st.header("\u2694\ufe0f Boss Raid")
     st.write("Test your might against the Boss!")
     if st.button("Challenge Boss"):
         win, message = boss_raid(profile)
@@ -133,85 +172,3 @@ elif choice == "Adventure":
             st.error(message)
         save_profile(profile)
 
-import streamlit as st
-import time
-
-# Initialize session state for timer
-if "profile" not in st.session_state:
-    st.session_state["profile"] = {
-        "timer_running": False,
-        "timer_start": None,
-        "timer_duration": None,
-        "paused_time": None,
-        "total_study_minutes": 0,
-        "xp": 0,
-        "gold": 0
-    }
-
-profile = st.session_state["profile"]
-
-# Timer Controls UI
-st.header("📚 Study Timer")
-minutes = st.number_input("Set Timer (minutes)", min_value=5, max_value=180, value=30, key="timer_input")
-
-if not profile["timer_running"] and profile["timer_start"] is None:
-    if st.button("Start Timer"):
-        profile["timer_start"] = time.time()
-        profile["timer_duration"] = minutes * 60
-        profile["timer_running"] = True
-        st.rerun()
-
-elif profile["timer_running"]:
-    elapsed = time.time() - profile["timer_start"]
-    remaining = max(int(profile["timer_duration"] - elapsed), 0)
-
-    st.subheader(f"Time Remaining: {remaining//60:02d}:{remaining%60:02d}")
-
-    col1, col2 = st.columns(2)
-    with col1:
-        if st.button("Pause"):
-            profile["timer_running"] = False
-            profile["paused_time"] = elapsed
-            st.rerun()
-    with col2:
-        if st.button("Stop Early"):
-            if elapsed >= 600:  # More than 10 minutes
-                proportion = elapsed / profile["timer_duration"]
-                profile["xp"] += int(proportion * 10 * (minutes))
-                profile["gold"] += int(proportion * 5 * (minutes))
-                st.success(f"Session stopped early. You gained {profile['xp']} XP and {profile['gold']} gold.")
-            else:
-                st.warning("Session stopped early, but no rewards were given.")
-
-            profile["timer_running"] = False
-            profile["timer_start"] = None
-            profile["timer_duration"] = None
-            profile["paused_time"] = None
-            st.rerun()
-
-elif "paused_time" in profile and profile["paused_time"] is not None:
-    paused_remaining = max(int(profile["timer_duration"] - profile["paused_time"]), 0)
-    st.subheader(f"Paused at: {paused_remaining//60:02d}:{paused_remaining%60:02d}")
-
-    col1, col2 = st.columns(2)
-    with col1:
-        if st.button("Resume"):
-            profile["timer_running"] = True
-            profile["timer_start"] = time.time() - profile["paused_time"]
-            del profile["paused_time"]
-            st.rerun()
-    with col2:
-        if st.button("Stop Early"):
-            if profile["paused_time"] >= 600:  # More than 10 minutes
-                proportion = profile["paused_time"] / profile["timer_duration"]
-                profile["xp"] += int(proportion * 10 * (minutes))
-                profile["gold"] += int(proportion * 5 * (minutes))
-                st.success(f"Session stopped early. You gained {profile['xp']} XP and {profile['gold']} gold.")
-            else:
-                st.warning("Session stopped early, but no rewards were given.")
-
-            profile["timer_running"] = False
-            profile["timer_start"] = None
-            profile["timer_duration"] = None
-            del profile["paused_time"]
-            st.rerun()
