@@ -131,5 +131,4 @@ elif choice == "Adventure":
         else:
             st.error(message)
         save_profile(profile)
-)
 
