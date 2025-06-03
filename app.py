@@ -110,6 +110,12 @@ elif choice == "Study":
         else:
             st.subheader("Time's up! Click below to complete session.")
             if st.button("Complete Session"):
+                import streamlit.components.v1 as components
+                st.markdown("---")
+                st.markdown("### Want to focus better?")
+                full_screen_link = f'<a href="?nav=Focus+Timer" target="_self"><button style="font-size:22px;padding:10px 25px;margin-top:10px;background-color:#3E64FF;color:white;border:none;border-radius:10px;">🖥️ Full Screen Mode</button></a>'
+                st.markdown(full_screen_link, unsafe_allow_html=True)
+
                 simulate_study(profile, int(profile['timer_duration'] / 60), profile["current_subject"])
                 profile["timer_running"] = False
                 profile["timer_start"] = None
@@ -154,14 +160,6 @@ elif choice == "Study":
                 profile["current_subject"] = None
                 save_profile(profile)
                 st.rerun()
-                
-import streamlit.components.v1 as components
-
-# Button to navigate to full screen timer
-st.markdown("---")
-st.markdown("### Want to focus better?")
-full_screen_link = f'<a href="?nav=Focus+Timer" target="_self"><button style="font-size:22px;padding:10px 25px;margin-top:10px;background-color:#3E64FF;color:white;border:none;border-radius:10px;">🖥️ Full Screen Mode</button></a>'
-st.markdown(full_screen_link, unsafe_allow_html=True)
 
 
 # --------- Stats Page ---------
